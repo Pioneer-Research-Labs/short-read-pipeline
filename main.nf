@@ -1,53 +1,47 @@
+#!/usr/bin/env nextflow
 
 params.outdir = "results"
 params.samplesheet = "samples.csv"
-params.mid = "CAGA"
 
 
-// mapping paramaters for finding barcodes and inserts
-params.kmer_size = 6
-params.chaining_score = 5 
-params.mismatch = 4
+// barcode searching parameters
+params.error_rate = 0.1
+params.min_overlap = 3
+
+// barcode searching parameters
+params.min_bc_len = 20
+params.max_bc_len = 60
+
 
 
 workflow {
 
-    input_ch = channel.fromPath(params.samplesheet)
+    channel.fromPath(params.samplesheet)
             .splitCsv(header:true)
             .map { row -> 
                 meta = [id:row.id, construct:file(row.construct)]
                 [meta, file(row.r1), file(row.r2)]
             }
+            | set {samples}
 
-    read_stats(input_ch)
+    read_stats(samples)
 
     // get the flanking sequences from the .dna file
-    flanking = getflanks(input_ch)
+    flanking = get_flanks(samples)
 
     // Quality filtering and merging pairs
-    merged_reads = qc_reads(input_ch)
-
-
+    reads = filter_and_merge(samples) 
+        | rename_reads
     
-
-
-
-    // extract barcodes with bartender
-    bartender_extract(flanking, merged_reads) 
+    extract_barcodes(reads, flanking) 
+        | filter_barcodes
         | barcode_counts
-    
-    // count unique barcodes
-    //barcodecounts(tab)
-    
-    /*
-    | bartender_cluster
 
-    */
 }
 
-process getflanks {
+process get_flanks {
     publishDir("$params.outdir/$meta.id")
-    tag ("Extracting flanks for $meta.id")
+    tag("$meta.id")
 
     input:
     tuple val(meta), path(r1), path(r2)
@@ -65,7 +59,7 @@ process getflanks {
 process read_stats {
 
     publishDir "$params.outdir/$meta.id"
-    tag("Getting stats for sample $meta.id")
+    tag("$meta.id")
 
     input:
     tuple val(meta), path(r1), path(r2)
@@ -80,12 +74,12 @@ process read_stats {
 
 }
 
-process qc_reads {
+process filter_and_merge {
 
     cpus 4
     
     publishDir "$params.outdir/$meta.id"
-    tag("Getting stats for sample $meta.id")
+    tag("$meta.id")
 
     input:
     tuple val(meta), path(r1), path(r2) 
@@ -93,91 +87,91 @@ process qc_reads {
     output:
     tuple val(meta), path("merged_reads.fastq")
 
+
     script:
     """
-    fastp -i $r1 -I $r2 --correction -m --merged_out merged_reads.fastq --include_unmerged -w $task.cpus
+    fastp -i $r1 -I $r2 --correction -m --merged_out merged_reads.fastq \
+            --include_unmerged -w $task.cpus \
+            --json fastp_report.json
     """
 }
 
-
-
-
-
-process bartender_extract {
-
+process rename_reads {
     publishDir "$params.outdir/$meta.id"
-    tag("Bartender barcode extraction for sample $meta.id")
+    tag("$meta.id")
 
     input:
-    tuple val(meta), path(flanking)
     tuple val(meta), path(reads)
 
     output:
-    tuple val(meta), path("bartender_extracted_barcode.txt")
-    
+    tuple val(meta), path("cleaned_reads.fastq")
+
     script:
     """
-    bartender_extractor_com -f $reads -o bartender_extracted -p \$(bc_template.py $flanking $params.mid) -m 2
+    seqkit replace -p .+ -r "read_{nr}" $reads > cleaned_reads.fastq
     """
 
 }
 
-process bartender_cluster {
-    
-    cpus 4
 
+process extract_barcodes {
     publishDir "$params.outdir/$meta.id"
-    tag("Bartender barcode clustering for sample $meta.id")
+    tag("$meta.id")
+
+    input:
+    tuple val(meta), path(reads)
+    tuple val(meta), path(flanking)
+
+    output:
+    tuple val(meta), path("barcodes.fasta")
+
+    script:
+    """
+    cutadapt \
+        -g \$(bc_template.py $flanking cutadapt) \
+        --discard-untrimmed \
+        --revcomp \
+        -e $params.error_rate \
+        -O $params.min_overlap \
+        -o barcodes.fasta \
+        --json cutadapt_report.json \
+        $reads
+    """
+}
+
+process filter_barcodes {
+    publishDir "$params.outdir/$meta.id"
+    tag("$meta.id")
 
     input:
     tuple val(meta), path(barcodes)
 
     output:
-    tuple val(meta), path("bt_clustered_barcode.csv"), path("bt_clustered_cluster.csv"), path("bt_clustered_quality.csv")
+    tuple val(meta), path("barcodes_filtered.fasta")
 
     script:
     """
-    bartender_single_com -f $barcodes -o bt_clustered -t $task.cpus
+    seqkit seq --min-len $params.min_bc_len --max-len $params.max_bc_len \
+        $barcodes > barcodes_filtered.fasta
     """
-
-
 }
-
 
 
 process barcode_counts {
 
     publishDir("$params.outdir/$meta.id")
-    tag 'Counting unique barcodes'
+    tag("$meta.id")
 
     input:
-    tuple val(meta), path(bc_seqs_tab)
+    tuple val(meta), path(barcodes)
 
     output:
     path 'barcode_counts.tsv'
 
     script:
     """
-    cut -f1 -d, $bc_seqs_tab | sort | uniq -c | awk '{print \$2"\t"\$1}' > barcode_counts.tsv
+     seqkit fx2tab -i $barcodes | cut -f2 | sort | uniq -c | \
+        awk '{print \$2"\t"\$1}' > barcode_counts.tsv
     """
 }
 
-
-
-/*
-
-process barcodetools_cluster {
-
-    publishDir "$params.outdir/$meta.id"
-    tag("Barcodetools barcode clustering for sample $meta.id") 
-
-    input:
-    tuple val(meta), path(barcodes) 
-
-    script:
-    """
-    
-    """
-
-}
-*/

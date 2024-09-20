@@ -4,6 +4,12 @@ params.samplesheet = "samples.csv"
 params.mid = "CAGA"
 
 
+// mapping paramaters for finding barcodes and inserts
+params.kmer_size = 6
+params.chaining_score = 5 
+params.mismatch = 4
+
+
 workflow {
 
     input_ch = channel.fromPath(params.samplesheet)
@@ -21,10 +27,22 @@ workflow {
     // Quality filtering and merging pairs
     merged_reads = qc_reads(input_ch)
 
+
+    
+
+
+
     // extract barcodes with bartender
     bartender_extract(flanking, merged_reads) 
+        | barcode_counts
+    
+    // count unique barcodes
+    //barcodecounts(tab)
+    
+    /*
     | bartender_cluster
 
+    */
 }
 
 process getflanks {
@@ -73,14 +91,14 @@ process qc_reads {
     tuple val(meta), path(r1), path(r2) 
     
     output:
-    tuple val(meta), path("merged_reads.fastq"), path("read_report.html")
+    tuple val(meta), path("merged_reads.fastq")
 
     script:
     """
-    fastp -i $r1 -I $r2 --correction -m --merged_out merged_reads.fastq --include_unmerged -w $task.cpus \
-          -h read_report.html -L
+    fastp -i $r1 -I $r2 --correction -m --merged_out merged_reads.fastq --include_unmerged -w $task.cpus
     """
 }
+
 
 
 
@@ -92,7 +110,7 @@ process bartender_extract {
 
     input:
     tuple val(meta), path(flanking)
-    tuple val(meta), path(reads), path(report)
+    tuple val(meta), path(reads)
 
     output:
     tuple val(meta), path("bartender_extracted_barcode.txt")
@@ -124,3 +142,42 @@ process bartender_cluster {
 
 
 }
+
+
+
+process barcode_counts {
+
+    publishDir("$params.outdir/$meta.id")
+    tag 'Counting unique barcodes'
+
+    input:
+    tuple val(meta), path(bc_seqs_tab)
+
+    output:
+    path 'barcode_counts.tsv'
+
+    script:
+    """
+    cut -f1 -d, $bc_seqs_tab | sort | uniq -c | awk '{print \$2"\t"\$1}' > barcode_counts.tsv
+    """
+}
+
+
+
+/*
+
+process barcodetools_cluster {
+
+    publishDir "$params.outdir/$meta.id"
+    tag("Barcodetools barcode clustering for sample $meta.id") 
+
+    input:
+    tuple val(meta), path(barcodes) 
+
+    script:
+    """
+    
+    """
+
+}
+*/

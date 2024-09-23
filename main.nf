@@ -33,10 +33,15 @@ workflow {
     reads = filter_and_merge(samples) 
         | rename_reads
     
-    extract_barcodes(reads, flanking) 
+    (barcodes, report) = extract_barcodes(reads, flanking) 
+    counts = barcodes    
         | filter_barcodes
         | barcode_counts
 
+    // report
+    template = channel.fromPath("${projectDir}/assets/report_template.ipynb") 
+    
+    preparereport(template, counts)
 }
 
 process get_flanks {
@@ -124,6 +129,7 @@ process extract_barcodes {
 
     output:
     tuple val(meta), path("barcodes.fasta")
+    path "cutadapt_report.json"
 
     script:
     """
@@ -175,3 +181,21 @@ process barcode_counts {
     """
 }
 
+
+process preparereport {
+
+    publishDir("$params.outdir")
+    tag 'Preparing report'
+
+    input:
+    path report
+    path barcode_counts
+
+    output:
+    path 'report.ipynb'
+
+    script:
+    """
+    cp $report 'report.ipynb'
+    """
+}

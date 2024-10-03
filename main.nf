@@ -2,6 +2,7 @@
 
 params.outdir = "results"
 params.samplesheet = "samples.csv"
+params.correct = false
 
 
 // barcode searching parameters
@@ -38,10 +39,14 @@ workflow {
         | filter_barcodes
         | barcode_counts
 
+    if ( params.correct) {
+    correcteed = barcode_correct(counts)
+    }
+
     // report
     template = channel.fromPath("${projectDir}/assets/report_template.ipynb") 
     
-    preparereport(template, counts)
+    prepare_report(template)
 }
 
 process get_flanks {
@@ -172,7 +177,7 @@ process barcode_counts {
     tuple val(meta), path(barcodes)
 
     output:
-    path 'barcode_counts.tsv'
+    tuple val(meta), path('barcode_counts.tsv')
 
     script:
     """
@@ -182,14 +187,33 @@ process barcode_counts {
 }
 
 
-process preparereport {
+process barcode_correct {
+    
+    publishDir("$params.outdir/$meta.id")
+    tag("$meta.id")
+
+    input:
+    tuple val(meta), path(barcode_counts)
+
+    output:
+    path "barcodes_corrected.tsv"
+
+    script:
+    """
+    barcodetool_correct.py $barcode_counts 
+    """
+
+
+
+}
+
+process prepare_report {
 
     publishDir("$params.outdir")
     tag 'Preparing report'
 
     input:
     path report
-    path barcode_counts
 
     output:
     path 'report.ipynb'

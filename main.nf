@@ -60,6 +60,7 @@ process read_stats {
     publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
 
+
     input:
     tuple val(meta), path(r1), path(r2)
 
@@ -76,6 +77,7 @@ process read_stats {
 process filter_and_merge {
 
     cpus params.cores
+
 
     publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
@@ -101,6 +103,7 @@ process filter_and_merge {
 process rename_reads {
     publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
+    
 
     input:
     tuple val(meta), path(reads)
@@ -119,6 +122,7 @@ process rename_reads {
 process extract_barcodes {
     publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
+
 
     cpus params.cores
 
@@ -148,6 +152,7 @@ process filter_barcodes {
     publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
 
+
     input:
     tuple val(meta), path(barcodes)
 
@@ -170,6 +175,7 @@ process barcode_counts {
 
     publishDir("$params.outdir/$meta.id")
     tag("$meta.id")
+
 
     input:
     tuple val(meta), path(barcodes)

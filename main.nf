@@ -1,19 +1,5 @@
 #!/usr/bin/env nextflow
 
-params.outdir = "results"
-params.samplesheet = "samples.csv"
-params.correct = false
-
-
-// barcode searching parameters
-params.error_rate = 0.1
-params.min_overlap = 3
-
-// barcode searching parameters
-params.min_bc_len = 20
-params.max_bc_len = 60
-
-
 
 workflow {
 
@@ -28,16 +14,17 @@ workflow {
     read_stats(samples)
 
     // get the flanking sequences from the .dna file
-    flanking = get_flanks(samples)
+    (flanking, cutadapt_bc) = get_flanks(samples)
 
     // Quality filtering and merging pairs
-    reads = filter_and_merge(samples) 
-        | rename_reads
+    (merged, fastp_json, fastp_html) = filter_and_merge(samples) 
     
-    (barcodes, report) = extract_barcodes(reads, flanking) 
-    counts = barcodes    
-        | filter_barcodes
-        | barcode_counts
+    cleaned = rename_reads(merged)
+    
+    (barcodes, report) = extract_barcodes(cleaned.join(cutadapt_bc))
+
+    (filtered_bc, bc_stats, bc_filt_stats) = filter_barcodes(barcodes)
+    counts = barcode_counts(filtered_bc)
 
     if ( params.correct) {
     correcteed = barcode_correct(counts)
@@ -58,10 +45,12 @@ process get_flanks {
 
     output:
     tuple val(meta), path("flanking.fasta")
+    tuple val(meta), path("cutadapt_bc.fasta")
 
     script:
     """
     get_flanking.py $meta.construct
+    bc_template.py flanking.fasta cutadapt > cutadapt_bc.fasta
     """
 }
 
@@ -86,8 +75,8 @@ process read_stats {
 
 process filter_and_merge {
 
-    cpus 4
-    
+    cpus params.cores
+
     publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
 
@@ -96,13 +85,16 @@ process filter_and_merge {
     
     output:
     tuple val(meta), path("merged_reads.fastq")
+    path "fastp_report.json"
+    path "fastp_report.html"
 
 
     script:
     """
     fastp -i $r1 -I $r2 --correction -m --merged_out merged_reads.fastq \
-            --include_unmerged -w $task.cpus \
-            --json fastp_report.json
+            -w $task.cpus \
+            --json fastp_report.json \
+            --html fastp_report.html
     """
 }
 
@@ -128,23 +120,25 @@ process extract_barcodes {
     publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
 
+    cpus params.cores
+
     input:
-    tuple val(meta), path(reads)
-    tuple val(meta), path(flanking)
+    tuple val(meta), path(reads), path(flanking)
 
     output:
-    tuple val(meta), path("barcodes.fasta")
+    tuple val(meta), path("barcodes.fastq")
     path "cutadapt_report.json"
 
     script:
     """
     cutadapt \
-        -g \$(bc_template.py $flanking cutadapt) \
+        -g  file:$flanking \
         --discard-untrimmed \
         --revcomp \
+        --cores $task.cpus \
         -e $params.error_rate \
         -O $params.min_overlap \
-        -o barcodes.fasta \
+        -o barcodes.fastq \
         --json cutadapt_report.json \
         $reads
     """
@@ -159,11 +153,15 @@ process filter_barcodes {
 
     output:
     tuple val(meta), path("barcodes_filtered.fasta")
+    path "barcode_stats.tsv"
+    path "barcodes_filtered_stats.tsv"
 
     script:
     """
+    seqkit stats -T $barcodes > barcode_stats.tsv
     seqkit seq --min-len $params.min_bc_len --max-len $params.max_bc_len \
-        $barcodes > barcodes_filtered.fasta
+        $barcodes | seqkit fq2fa > barcodes_filtered.fasta
+    seqkit stats -T barcodes_filtered.fasta > barcodes_filtered_stats.tsv
     """
 }
 

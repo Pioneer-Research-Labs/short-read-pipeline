@@ -31,6 +31,6 @@ final_barcodes = (all
  )
 
 
-final_barcodes.to_csv("barcodes_corrected.tsv", sep = "\t")
+final_barcodes.to_csv("barcodes_corrected.tsv", sep = "\t", index = False, header = False)
 
 

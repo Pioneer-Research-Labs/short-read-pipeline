@@ -128,7 +128,7 @@ process extract_barcodes {
 
 
     cpus params.cores
-    mem '16 GB'
+    memory '16 GB'
 
     input:
     tuple val(meta), path(reads), path(flanking)

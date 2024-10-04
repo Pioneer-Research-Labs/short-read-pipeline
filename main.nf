@@ -13,6 +13,7 @@ workflow {
 
     read_stats(samples)
 
+
     // get the flanking sequences from the .dna file
     (flanking, cutadapt_bc) = get_flanks(samples)
 
@@ -60,6 +61,7 @@ process read_stats {
     publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
 
+    cpus params.cores 
 
     input:
     tuple val(meta), path(r1), path(r2)
@@ -69,7 +71,7 @@ process read_stats {
 
     script:
     """
-    seqkit stats -T $r1 $r2 > read_stats.tsv
+    seqkit stats -T -j $task.cpus $r1 $r2 > read_stats.tsv
     """
 
 }
@@ -77,7 +79,7 @@ process read_stats {
 process filter_and_merge {
 
     cpus params.cores
-
+    memory '2 GB'
 
     publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
@@ -103,7 +105,8 @@ process filter_and_merge {
 process rename_reads {
     publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
-    
+
+    cpus params.cores 
 
     input:
     tuple val(meta), path(reads)
@@ -113,7 +116,7 @@ process rename_reads {
 
     script:
     """
-    seqkit replace -p .+ -r "read_{nr}" $reads > cleaned_reads.fastq
+    seqkit replace -j $task.cpus -p .+ -r "read_{nr}" $reads > cleaned_reads.fastq
     """
 
 }
@@ -125,6 +128,7 @@ process extract_barcodes {
 
 
     cpus params.cores
+    mem '16 GB'
 
     input:
     tuple val(meta), path(reads), path(flanking)
@@ -152,6 +156,7 @@ process filter_barcodes {
     publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
 
+    cpus params.cores
 
     input:
     tuple val(meta), path(barcodes)
@@ -163,10 +168,10 @@ process filter_barcodes {
 
     script:
     """
-    seqkit stats -T $barcodes > barcode_stats.tsv
-    seqkit seq --min-len $params.min_bc_len --max-len $params.max_bc_len \
-        $barcodes | seqkit fq2fa > barcodes_filtered.fasta
-    seqkit stats -T barcodes_filtered.fasta > barcodes_filtered_stats.tsv
+    seqkit stats -T -j $task.cpus $barcodes > barcode_stats.tsv
+    seqkit seq -j $task.cpus --min-len $params.min_bc_len --max-len $params.max_bc_len \
+        $barcodes | seqkit fq2fa -j $task.cpus > barcodes_filtered.fasta
+    seqkit stats -T -j $task.cpus barcodes_filtered.fasta > barcodes_filtered_stats.tsv
     """
 }
 
@@ -176,6 +181,7 @@ process barcode_counts {
     publishDir("$params.outdir/$meta.id")
     tag("$meta.id")
 
+    cpus params.cores
 
     input:
     tuple val(meta), path(barcodes)
@@ -185,7 +191,7 @@ process barcode_counts {
 
     script:
     """
-     seqkit fx2tab -i $barcodes | cut -f2 | sort | uniq -c | \
+     seqkit fx2tab -j $task.cpus -i $barcodes | cut -f2 | sort | uniq -c | \
         awk '{print \$2"\t"\$1}' > barcode_counts.tsv
     """
 }
@@ -195,6 +201,8 @@ process barcode_correct {
     
     publishDir("$params.outdir/$meta.id")
     tag("$meta.id")
+
+    memory '32 GB'
 
     input:
     tuple val(meta), path(barcode_counts)

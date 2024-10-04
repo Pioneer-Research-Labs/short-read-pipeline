@@ -8,6 +8,6 @@ RUN conda install -c bioconda -c conda-forge \
     levenshtein=0.26.0 \
     regex=2024.9.11 \
     snapgene-reader=0.1.21
-    
+
 
 

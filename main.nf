@@ -6,16 +6,26 @@ workflow {
     channel.fromPath(params.samplesheet)
             .splitCsv(header:true)
             .map { row -> 
-                meta = [id:row.id, construct:file(row.construct)]
+                meta = [id:row.id]
                 [meta, file(row.r1), file(row.r2)]
             }
             | set {samples}
+
+    
+
+    channel.fromPath(params.samplesheet)
+            .splitCsv(header:true)
+            .map { row -> 
+                meta = [id:row.id,]
+                [meta, file(row.construct)]
+            }
+            | set {constructs}
 
     read_stats(samples)
 
 
     // get the flanking sequences from the .dna file
-    (flanking, cutadapt_bc) = get_flanks(samples)
+    (flanking, cutadapt_bc) = get_flanks(constructs)
 
     // Quality filtering and merging pairs
     (merged, fastp_json, fastp_html) = filter_and_merge(samples) 
@@ -42,7 +52,7 @@ process get_flanks {
     tag("$meta.id")
 
     input:
-    tuple val(meta), path(r1), path(r2)
+    tuple val(meta), path(construct)
 
     output:
     tuple val(meta), path("flanking.fasta")
@@ -50,7 +60,7 @@ process get_flanks {
 
     script:
     """
-    get_flanking.py $meta.construct
+    get_flanking.py $construct
     bc_template.py flanking.fasta cutadapt > cutadapt_bc.fasta
     """
 }

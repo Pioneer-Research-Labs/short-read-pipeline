@@ -89,7 +89,7 @@ process read_stats {
 process filter_and_merge {
 
     cpus params.cores
-    memory '2 GB'
+    memory params.big_mem
 
     publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
@@ -138,7 +138,7 @@ process extract_barcodes {
 
 
     cpus params.cores
-    memory '16 GB'
+    memory params.big_mem
 
     input:
     tuple val(meta), path(reads), path(flanking)
@@ -192,6 +192,7 @@ process barcode_counts {
     tag("$meta.id")
 
     cpus params.cores
+    memory params.big_mem
 
     input:
     tuple val(meta), path(barcodes)
@@ -212,7 +213,7 @@ process barcode_correct {
     publishDir("$params.outdir/$meta.id")
     tag("$meta.id")
 
-    memory '32 GB'
+    memory params.correct_mem
 
     input:
     tuple val(meta), path(barcode_counts)

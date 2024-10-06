@@ -30,9 +30,9 @@ workflow {
     // Quality filtering and merging pairs
     (merged, fastp_json, fastp_html) = filter_and_merge(samples) 
     
-    cleaned = rename_reads(merged)
+    //cleaned = rename_reads(merged)
     
-    (barcodes, report) = extract_barcodes(cleaned.join(cutadapt_bc))
+    (barcodes, report) = extract_barcodes(merged.join(cutadapt_bc))
 
     (filtered_bc, bc_stats, bc_filt_stats) = filter_barcodes(barcodes)
     counts = barcode_counts(filtered_bc)

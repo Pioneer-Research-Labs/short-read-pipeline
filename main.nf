@@ -117,6 +117,7 @@ process rename_reads {
     tag("$meta.id")
 
     cpus params.cores 
+    cpus params.big_mem
 
     input:
     tuple val(meta), path(reads)

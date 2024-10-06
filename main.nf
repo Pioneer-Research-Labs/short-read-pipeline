@@ -91,7 +91,7 @@ process filter_and_merge {
     cpus params.cores
     memory params.big_mem
 
-    publishDir "$params.outdir/$meta.id"
+    //publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
 
     input:

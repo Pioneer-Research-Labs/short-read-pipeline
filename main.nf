@@ -34,11 +34,14 @@ workflow {
     
     (barcodes, report) = extract_barcodes(merged.join(cutadapt_bc))
 
-    (filtered_bc, bc_stats, bc_filt_stats) = filter_barcodes(barcodes)
+    filtered_bc = filter_barcodes(barcodes)
+    
+    barcode_stats(barcodes.join(filtered_bc))
+
     counts = barcode_counts(filtered_bc)
 
     if ( params.correct) {
-    correcteed = barcode_correct(counts)
+        correcteed = barcode_correct(counts)
     }
 
     // report
@@ -48,7 +51,7 @@ workflow {
 }
 
 process get_flanks {
-    publishDir("$params.outdir/$meta.id")
+    
     tag("$meta.id")
 
     input:
@@ -134,15 +137,18 @@ process rename_reads {
 
 
 process extract_barcodes {
-    publishDir "$params.outdir/$meta.id"
-    tag("$meta.id")
+    
+    if (params.keep_intermediate) {
+        publishDir "$params.outdir/$meta.id"
+    }
 
+    tag("$meta.id")
 
     cpus params.cores
     memory params.big_mem
 
     input:
-    tuple val(meta), path(reads), path(flanking)
+    tuple val(meta), path(reads), path(flanking)    
 
     output:
     tuple val(meta), path("barcodes.fastq")
@@ -164,7 +170,11 @@ process extract_barcodes {
 }
 
 process filter_barcodes {
-    publishDir "$params.outdir/$meta.id"
+    
+    if (params.keep_intermediate) {
+        publishDir "$params.outdir/$meta.id"
+    }
+
     tag("$meta.id")
 
     cpus params.cores
@@ -174,21 +184,39 @@ process filter_barcodes {
 
     output:
     tuple val(meta), path("barcodes_filtered.fasta")
+    
+    script:
+    """
+    seqkit seq -j $task.cpus --min-len $params.min_bc_len --max-len $params.max_bc_len \
+        $barcodes | seqkit fq2fa -j $task.cpus > barcodes_filtered.fasta
+    """
+}
+
+process barcode_stats {
+    
+    publishDir "$params.outdir/$meta.id"
+    tag("$meta.id")
+    cpus params.cores
+
+    input: 
+    tuple val(meta), path(barcodes), path(barcodes_filtered)
+
+    output:
     path "barcode_stats.tsv"
     path "barcodes_filtered_stats.tsv"
 
     script:
     """
     seqkit stats -T -j $task.cpus $barcodes > barcode_stats.tsv
-    seqkit seq -j $task.cpus --min-len $params.min_bc_len --max-len $params.max_bc_len \
-        $barcodes | seqkit fq2fa -j $task.cpus > barcodes_filtered.fasta
-    seqkit stats -T -j $task.cpus barcodes_filtered.fasta > barcodes_filtered_stats.tsv
+    seqkit stats -T -j $task.cpus $barcodes_filtered > barcodes_filtered_stats.tsv
     """
+
 }
 
 
 process barcode_counts {
 
+    
     publishDir("$params.outdir/$meta.id")
     tag("$meta.id")
 

@@ -7,7 +7,11 @@ RUN conda install -c bioconda -c conda-forge \
     cutadapt=4.9 \
     levenshtein=0.26.0 \
     regex=2024.9.11 \
-    snapgene-reader=0.1.21
+    snapgene-reader=0.1.21 \
+    scipy=1.14.1 \
+    pandas=2.2.2
+
+
 
 
 

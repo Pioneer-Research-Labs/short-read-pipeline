@@ -9,7 +9,8 @@ RUN conda install -c bioconda -c conda-forge \
     regex=2024.9.11 \
     snapgene-reader=0.1.21 \
     scipy=1.14.1 \
-    pandas=2.2.2
+    pandas=2.2.2 \
+    click=8.1.7
 
 
 

@@ -243,11 +243,13 @@ process barcode_correct {
 
     output:
     path "barcodes_corrected.tsv"
+    path "barcodes_corrected_low_count.tsv"
     path "correct_stats.csv"
 
     script:
     """
-    barcodetool_correct.py $barcode_counts 
+    barcodetool_correct.py --path $barcode_counts --min-centroid $params.min_centroid \
+        --error-rate $params.correct_error_rate --max-edits $params.max_edits
     """
 
 

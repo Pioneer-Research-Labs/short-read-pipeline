@@ -48,9 +48,16 @@ def main(path, min_centroid, error_rate, max_edits):
     corrected = removed_error.query('barcode_corrected != "excluded low count"')[['barcode_corrected', 'count']] \
         .rename(columns={'barcode_corrected': 'barcode'})
     
-    all = pd.concat([corrected, low_count])
+    w_low_count = pd.concat([corrected, low_count])
 
-    final_barcodes = (all
+    final_low_count = (w_low_count
+        .groupby('barcode', as_index=False)
+        .sum()
+        .rename(columns={'sum':'count'})
+        .sort_values('count', ascending=False)
+    )
+
+    final = (corrected
         .groupby('barcode', as_index=False)
         .sum()
         .rename(columns={'sum':'count'})
@@ -58,8 +65,8 @@ def main(path, min_centroid, error_rate, max_edits):
     )
 
 
-    final_barcodes.to_csv("barcodes_corrected_low_count.tsv", sep = "\t", index = False, header = False)
-    corrected.to_csv("barcodes_corrected.tsv", sep = "\t", index = False, header = False)
+    final_low_count.to_csv("barcodes_corrected_low_count.tsv", sep = "\t", index = False, header = False)
+    final.to_csv("barcodes_corrected.tsv", sep = "\t", index = False, header = False)
     pd.DataFrame.from_dict(stats).to_csv("correct_stats.csv", index = False)
 
 

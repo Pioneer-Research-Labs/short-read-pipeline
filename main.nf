@@ -41,7 +41,7 @@ workflow {
     counts = barcode_counts(filtered_bc)
 
     if ( params.correct) {
-        correcteed = barcode_correct(counts)
+        barcode_correct(counts)
     }
 
     // report
@@ -137,10 +137,7 @@ process rename_reads {
 
 
 process extract_barcodes {
-    
-    if (params.keep_intermediate) {
-        publishDir "$params.outdir/$meta.id"
-    }
+
 
     tag("$meta.id")
 
@@ -170,10 +167,7 @@ process extract_barcodes {
 }
 
 process filter_barcodes {
-    
-    if (params.keep_intermediate) {
-        publishDir "$params.outdir/$meta.id"
-    }
+
 
     tag("$meta.id")
 
@@ -249,6 +243,7 @@ process barcode_correct {
 
     output:
     path "barcodes_corrected.tsv"
+    path "correct_stats.csv"
 
     script:
     """

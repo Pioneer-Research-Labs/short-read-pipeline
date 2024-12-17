@@ -4,3 +4,4 @@
 .DS_Store
 data
 work
+__pycache__

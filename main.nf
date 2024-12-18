@@ -3,50 +3,77 @@
 
 workflow {
 
-    channel.fromPath(params.samplesheet)
+    samples = channel.fromPath(params.samplesheet)
             .splitCsv(header:true)
             .map { row -> 
                 meta = [id:row.id]
                 [meta, file(row.r1), file(row.r2)]
             }
-            | set {samples}
 
-    
 
-    channel.fromPath(params.samplesheet)
+    constructs = channel.fromPath(params.samplesheet)
             .splitCsv(header:true)
             .map { row -> 
                 meta = [id:row.id,]
                 [meta, file(row.construct)]
             }
-            | set {constructs}
 
-    read_stats(samples)
-
+    r_stats = read_stats(samples)
 
     // get the flanking sequences from the .dna file
-    (flanking, cutadapt_bc) = get_flanks(constructs)
+    flanks = get_flanks(constructs)
 
     // Quality filtering and merging pairs
-    (merged, fastp_json, fastp_html) = filter_and_merge(samples) 
-    
-    //cleaned = rename_reads(merged)
-    
-    (barcodes, report) = extract_barcodes(merged.join(cutadapt_bc))
+    filtered = filter_and_merge(samples) 
 
-    filtered_bc = filter_barcodes(barcodes)
-    
-    barcode_stats(barcodes.join(filtered_bc))
+    // extract barcodes
+    barcodes = extract_barcodes(filtered.merged.join(flanks.cutadapt_bc))
 
+    // size filter for barcodes
+    filtered_bc = filter_barcodes(barcodes.barcodes)
+    
+    // get stats for barcodes
+    bc_stats = barcode_stats(barcodes.barcodes.join(filtered_bc))
+
+    // get barcode counts
     counts = barcode_counts(filtered_bc)
 
+    // combine stats
+    stats_ch = bc_stats.barcodes \
+        .join(bc_stats.barcodes_filtered) \
+        .join(r_stats)
+
+   
+    cutoffs = Channel.fromList(params.barcode_cutoff)
+
     if ( params.correct) {
-        barcode_correct(counts)
+        bc_correct = barcode_correct(counts)
+        stats_ch = stats_ch.join(bc_correct.corrected_stats)
+        freqs = bc_correct.corrected \
+            | combine(cutoffs) \
+            | add_freq
+    } else {
+        stats_ch = stats_ch.map { it + [ [] ] }
+        freqs = counts \
+            | combine(cutoffs) \
+            | add_freq
     }
+    
+    // Aggregate stats
+    stats_ch | combine_stats
+        | collect \
+        | agg_stats
+
+
+    // Aggregate barcode counts and unique counts
+    freqs.freq \
+        | groupTuple \
+        | join(freqs.uniq | groupTuple) \
+        | agg_barcode_counts
+
 
     // report
     template = channel.fromPath("${projectDir}/assets/report_template.ipynb") 
-    
     prepare_report(template)
 }
 
@@ -58,8 +85,8 @@ process get_flanks {
     tuple val(meta), path(construct)
 
     output:
-    tuple val(meta), path("flanking.fasta")
-    tuple val(meta), path("cutadapt_bc.fasta")
+    tuple val(meta), path("flanking.fasta"), emit: flanking
+    tuple val(meta), path("cutadapt_bc.fasta"), emit: cutadapt_bc
 
     script:
     """
@@ -71,7 +98,7 @@ process get_flanks {
 
 process read_stats {
 
-    publishDir "$params.outdir/$meta.id"
+    //publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
 
     cpus params.cores 
@@ -80,7 +107,7 @@ process read_stats {
     tuple val(meta), path(r1), path(r2)
 
     output:
-    path "read_stats.tsv"
+    tuple val(meta), path("read_stats.tsv")
 
     script:
     """
@@ -101,9 +128,9 @@ process filter_and_merge {
     tuple val(meta), path(r1), path(r2) 
     
     output:
-    tuple val(meta), path("merged_reads.fastq")
-    path "fastp_report.json"
-    path "fastp_report.html"
+    tuple val(meta), path("merged_reads.fastq"), emit: merged
+    path "fastp_report.json", emit: fastp_json
+    path "fastp_report.html", emit: fastp_html
 
 
     script:
@@ -116,7 +143,7 @@ process filter_and_merge {
 }
 
 process rename_reads {
-    publishDir "$params.outdir/$meta.id"
+    //publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
 
     cpus params.cores 
@@ -138,7 +165,6 @@ process rename_reads {
 
 process extract_barcodes {
 
-
     tag("$meta.id")
 
     cpus params.cores
@@ -148,8 +174,8 @@ process extract_barcodes {
     tuple val(meta), path(reads), path(flanking)    
 
     output:
-    tuple val(meta), path("barcodes.fastq")
-    path "cutadapt_report.json"
+    tuple val(meta), path("barcodes.fastq"), emit: barcodes
+    path "cutadapt_report.json", emit: report
 
     script:
     """
@@ -167,7 +193,6 @@ process extract_barcodes {
 }
 
 process filter_barcodes {
-
 
     tag("$meta.id")
 
@@ -188,7 +213,7 @@ process filter_barcodes {
 
 process barcode_stats {
     
-    publishDir "$params.outdir/$meta.id"
+    //publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
     cpus params.cores
 
@@ -196,8 +221,8 @@ process barcode_stats {
     tuple val(meta), path(barcodes), path(barcodes_filtered)
 
     output:
-    path "barcode_stats.tsv"
-    path "barcodes_filtered_stats.tsv"
+    tuple val(meta), path("barcode_stats.tsv"), emit: barcodes
+    tuple val(meta), path("barcodes_filtered_stats.tsv"), emit: barcodes_filtered
 
     script:
     """
@@ -207,11 +232,43 @@ process barcode_stats {
 
 }
 
+process combine_stats {
+    //publishDir "$params.outdir/$meta.id"
+    tag("$meta.id")
+
+    input:
+    tuple val(meta), path(barcodes), path(barcodes_filtered), path(read_stats), path(correct_stats)
+
+    output:
+    path "${meta.id}_stats.csv"
+
+    script:
+    """
+    combine_stats.py $barcodes $barcodes_filtered $read_stats $correct_stats --sample_name $meta.id
+    """
+
+}
+
+process agg_stats {
+    
+    publishDir "$params.outdir"
+
+    input:
+    path stats_files
+
+    output:
+    path "all_stats.csv"
+
+    script:
+    """ 
+    csvtk concat -k $stats_files > all_stats.csv
+    """
+
+}
 
 process barcode_counts {
 
-    
-    publishDir("$params.outdir/$meta.id")
+    //publishDir("$params.outdir/$meta.id")
     tag("$meta.id")
 
     cpus params.cores
@@ -233,7 +290,7 @@ process barcode_counts {
 
 process barcode_correct {
     
-    publishDir("$params.outdir/$meta.id")
+    //publishDir("$params.outdir/$meta.id")
     tag("$meta.id")
 
     memory params.correct_mem
@@ -242,9 +299,9 @@ process barcode_correct {
     tuple val(meta), path(barcode_counts)
 
     output:
-    path "barcodes_corrected.tsv"
-    path "barcodes_corrected_low_count.tsv"
-    path "correct_stats.csv"
+    tuple val(meta), path("barcodes_corrected.tsv"), emit: corrected
+    tuple val(meta), path("barcodes_corrected_low_count.tsv"),  emit: corrected_low_count
+    tuple val(meta), path("correct_stats.csv"), emit: corrected_stats
 
     script:
     """
@@ -252,9 +309,43 @@ process barcode_correct {
         --error-rate $params.correct_error_rate --max-edits $params.max_edits
     """
 
+}
 
+process add_freq {
+    //publishDir("$params.outdir/$meta.id")
+    tag("$meta.id")
+
+    input:
+    tuple val(meta), path(barcode_counts), val(cutoff)
+
+    output:
+    tuple val(cutoff), path("${meta.id}_${cutoff}_barcodes_freq.csv"), emit: freq
+    tuple val(cutoff), path("${meta.id}_${cutoff}_uniq_barcodes.csv"), emit: uniq
+
+    script:
+    """
+    add_freq.py $barcode_counts $meta.id --cutoff $cutoff
+    """
 
 }
+
+process agg_barcode_counts {
+    publishDir("$params.outdir")
+
+    input:
+    tuple val(cutoff), path(freq_files), path(uniq_files)
+
+    output:
+    path "all_barcodes_freq_${cutoff}.csv"
+    path "all_uniq_barcodes_${cutoff}.csv"
+
+    script:
+    """
+    csvtk concat -k $freq_files > all_barcodes_freq_${cutoff}.csv
+    csvtk concat -k $uniq_files > all_uniq_barcodes_${cutoff}.csv
+    """
+}
+
 
 process prepare_report {
 

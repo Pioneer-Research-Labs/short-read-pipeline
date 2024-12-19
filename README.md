@@ -15,9 +15,10 @@ nextflow run Pioneer-Research-Labs/short-read-pipeline --samplesheet samples.csv
 ```
 
 The sample sheet is a three column csv file as follows:
-Column 1: sample id
-Column 2: construct .dna file from SnapGene with barcode flanking regions annotated (BARCODEUP, BARCODEDN)
-Column 3: S3 bucket location of the sequencing file
+
+* Column 1: sample id
+* Column 2: construct .dna file from SnapGene with barcode flanking regions annotated (BARCODEUP, BARCODEDN)
+* Column 3: S3 bucket location of the sequencing file
 
 ### Outputs
 

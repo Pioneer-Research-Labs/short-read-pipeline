@@ -3,37 +3,37 @@
 // Define the usage string
 def helpMessage() { 
         log.info """
-    Usage: nextflow run Pioneer-Research-Labs/short-read-pipeline  [options]
+Usage: nextflow run Pioneer-Research-Labs/short-read-pipeline  [options]
 
-    Options:
-    ---------
+Options:
+---------
 
-    General:
-    --outdir <path>                Output directory (default: "results")
-    --samplesheet <path>           Path to the samplesheet CSV file (default: "samples.csv")
-    --barcode_cutoff <list>        List of barcode count cutoffs. Produces one barcode output 
-                                   file per cutoff (default: [0, 5])
+General:
+--outdir <path>                Output directory (default: "results")
+--samplesheet <path>           Path to the samplesheet CSV file (default: "samples.csv")
+--barcode_cutoff <list>        List of barcode count cutoffs. Produces one barcode output 
+                                file per cutoff (default: [0, 5])
 
-    Barcode searching:
-    --error_rate <float>           Error rate for barcode searching (default: 0.1)
-    --min_overlap <int>            Minimum overlap for barcode searching (default: 3)
-    --min_bc_len <int>             Minimum barcode length for filtering (default: 20)
-    --max_bc_len <int>             Maximum barcode length for filtering (default: 60)
+Barcode searching:
+--error_rate <float>           Error rate for barcode searching (default: 0.1)
+--min_overlap <int>            Minimum overlap for barcode searching (default: 3)
+--min_bc_len <int>             Minimum barcode length for filtering (default: 20)
+--max_bc_len <int>             Maximum barcode length for filtering (default: 60)
 
-    Barcode correction:
-    --correct                      Enable barcode correction (default: false)
-    --min_centroid <int>           Minimum centroid for barcode correction (default: 2)
-    --correct_error_rate <float>   Error rate for barcode correction (default: 0.1)
-    --max_edits <int>              Maximum edits for barcode correction (default: 3)
-    
-    Resources:
-    --cores <int>                  Number of CPU cores to use (default: 4)
-    --big_mem <string>             Memory allocation for big memory processes (default: "16 GB")
-    --correct_mem <string>         Memory allocation for barcode correction processes (default: "16 GB")
+Barcode correction:
+--correct                      Enable barcode correction (default: false)
+--min_centroid <int>           Minimum centroid for barcode correction (default: 2)
+--correct_error_rate <float>   Error rate for barcode correction (default: 0.1)
+--max_edits <int>              Maximum edits for barcode correction (default: 3)
 
-    Profiles:
-    -profile standard              Run pipeline locally with Docker
-    -profile awsbatch              Run pipeline on AWS Batch
+Resources:
+--cores <int>                  Number of CPU cores to use (default: 4)
+--big_mem <string>             Memory allocation for big memory processes (default: "16 GB")
+--correct_mem <string>         Memory allocation for barcode correction processes (default: "16 GB")
+
+Profiles:
+-profile standard              Run pipeline locally with Docker
+-profile awsbatch              Run pipeline on AWS Batch
 
     """
 }
@@ -43,16 +43,16 @@ def helpMessage() {
 workflow {
 
     log.info """
-    ▗▄▄▖▗▄▄▄▖ ▗▄▖ ▗▖  ▗▖▗▄▄▄▖▗▄▄▄▖▗▄▄▖     ▗▄▄▖▗▄▄▄▖▗▄▄▖ ▗▄▄▄▖▗▖   ▗▄▄▄▖▗▖  ▗▖▗▄▄▄▖ ▗▄▄▖
-    ▐▌ ▐▌ █  ▐▌ ▐▌▐▛▚▖▐▌▐▌   ▐▌   ▐▌ ▐▌    ▐▌ ▐▌ █  ▐▌ ▐▌▐▌   ▐▌     █  ▐▛▚▖▐▌▐▌   ▐▌   
-    ▐▛▀▘  █  ▐▌ ▐▌▐▌ ▝▜▌▐▛▀▀▘▐▛▀▀▘▐▛▀▚▖    ▐▛▀▘  █  ▐▛▀▘ ▐▛▀▀▘▐▌     █  ▐▌ ▝▜▌▐▛▀▀▘ ▝▀▚▖
-    ▐▌  ▗▄█▄▖▝▚▄▞▘▐▌  ▐▌▐▙▄▄▖▐▙▄▄▖▐▌ ▐▌    ▐▌  ▗▄█▄▖▐▌   ▐▙▄▄▖▐▙▄▄▖▗▄█▄▖▐▌  ▐▌▐▙▄▄▖▗▄▄▞▘
+▗▄▄▖▗▄▄▄▖ ▗▄▖ ▗▖  ▗▖▗▄▄▄▖▗▄▄▄▖▗▄▄▖     ▗▄▄▖▗▄▄▄▖▗▄▄▖ ▗▄▄▄▖▗▖   ▗▄▄▄▖▗▖  ▗▖▗▄▄▄▖ ▗▄▄▖
+▐▌ ▐▌ █  ▐▌ ▐▌▐▛▚▖▐▌▐▌   ▐▌   ▐▌ ▐▌    ▐▌ ▐▌ █  ▐▌ ▐▌▐▌   ▐▌     █  ▐▛▚▖▐▌▐▌   ▐▌   
+▐▛▀▘  █  ▐▌ ▐▌▐▌ ▝▜▌▐▛▀▀▘▐▛▀▀▘▐▛▀▚▖    ▐▛▀▘  █  ▐▛▀▘ ▐▛▀▀▘▐▌     █  ▐▌ ▝▜▌▐▛▀▀▘ ▝▀▚▖
+▐▌  ▗▄█▄▖▝▚▄▞▘▐▌  ▐▌▐▙▄▄▖▐▙▄▄▖▐▌ ▐▌    ▐▌  ▗▄█▄▖▐▌   ▐▙▄▄▖▐▙▄▄▖▗▄█▄▖▐▌  ▐▌▐▙▄▄▖▗▄▄▞▘
 
-    Short Read Processing Pipeline          
+Short Read Processing Pipeline          
     """           
 
     // Show help message
-    if (params.help == "--help") {
+    if (params.help) {
         helpMessage()
         exit 0
     }

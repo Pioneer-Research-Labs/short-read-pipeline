@@ -52,7 +52,7 @@ workflow {
     """           
 
     // Show help message
-    if (params.help) {
+    if (params.help == "--help") {
         helpMessage()
         exit 0
     }

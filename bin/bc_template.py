@@ -12,8 +12,8 @@ def extract_flanks(path, out_type, feature_regex=r'BARCODE[0-9]{0,2}(UP|DN)'):
     """
     Extracts flanking sequences from a genbank file and returns them in the format required by cutadapt
     :param path: Path to the genbank file containing the flanking sequences
-    :param out_type: string representing the annotation type to be extracted. Either 'cutadapt_barcode' or 'cutadapt_insert'
-    :param feature_regex: regex to filter the features
+    :param out_type: string representing the annotation type to be extracted. Either 'cutadapt' or 'bartender'
+    :param feature_regex: regex to identify the feature annotations in the genbank file
     :return: string representing the flanking sequences in the format required by cutadapt
     """
 
@@ -52,4 +52,4 @@ def order_based_on_position(seqs):
     return sorted(seqs, key=lambda x: x.features[0].location.start)
 
 if __name__ == "__main__":
-    extract_flanks(sys.argv[1], sys.argv[2], feature_regex=r'Barcode_(F|R)')
+    extract_flanks(sys.argv[1], sys.argv[2])

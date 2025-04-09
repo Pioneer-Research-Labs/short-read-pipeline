@@ -139,13 +139,13 @@ process get_flanks {
     tuple val(meta), path(construct)
 
     output:
-    tuple val(meta), path("flanking.fasta"), emit: flanking
+    tuple val(meta), path("flanking.gb"), emit: flanking
     tuple val(meta), path("cutadapt_bc.fasta"), emit: cutadapt_bc
 
     script:
     """
     get_flanking.py $construct
-    bc_template.py flanking.fasta cutadapt > cutadapt_bc.fasta
+    bc_template.py flanking.gb cutadapt > cutadapt_bc.fasta
     """
 }
 

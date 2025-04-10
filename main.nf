@@ -29,7 +29,7 @@ Barcode correction:
 Resources:
 --cores <int>                  Number of CPU cores to use (default: 4)
 --big_mem <string>             Memory allocation for big memory processes (default: "16 GB")
---correct_mem <string>         Memory allocation for barcode correction processes (default: "16 GB")
+--correct_mem <string>         Memory allocation for barcode correction processes (default: "32 GB")
 
 Profiles:
 -profile standard              Run pipeline locally with Docker
@@ -114,16 +114,16 @@ Short Read Processing Pipeline
     }
     
     // Aggregate stats
-    stats_ch | combine_stats
-        | collect \
-        | agg_stats
+    // stats_ch | combine_stats
+    //     | collect \
+    //     | agg_stats
 
 
     // Aggregate barcode counts and unique counts
-    freqs.freq \
-        | groupTuple \
-        | join(freqs.uniq | groupTuple) \
-        | agg_barcode_counts
+    // freqs.freq \
+    //     | groupTuple \
+    //     | join(freqs.uniq | groupTuple) \
+    //     | agg_barcode_counts
 
 
     // report
@@ -152,7 +152,7 @@ process get_flanks {
 
 process read_stats {
 
-    //publishDir "$params.outdir/$meta.id"
+    publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
 
     cpus params.cores 
@@ -267,7 +267,7 @@ process filter_barcodes {
 
 process barcode_stats {
     
-    //publishDir "$params.outdir/$meta.id"
+    publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
     cpus params.cores
 
@@ -287,7 +287,7 @@ process barcode_stats {
 }
 
 process combine_stats {
-    //publishDir "$params.outdir/$meta.id"
+    publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
 
     input:
@@ -322,7 +322,7 @@ process agg_stats {
 
 process barcode_counts {
 
-    //publishDir("$params.outdir/$meta.id")
+    publishDir("$params.outdir/$meta.id")
     tag("$meta.id")
 
     cpus params.cores
@@ -366,7 +366,7 @@ process barcode_correct {
 }
 
 process add_freq {
-    //publishDir("$params.outdir/$meta.id")
+    publishDir("$params.outdir/$meta.id")
     tag("$meta.id")
 
     input:

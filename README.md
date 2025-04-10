@@ -66,7 +66,7 @@ The results directory will also contain a `report.ipynb` file which is a Jupyter
     Resources:
     --cores <int>                  Number of CPU cores to use (default: 4)
     --big_mem <string>             Memory allocation for big memory processes (default: "16 GB")
-    --correct_mem <string>         Memory allocation for barcode correction processes (default: "32 GB")
+    --correct_mem <string>         Memory allocation for barcode correction processes (default: "16 GB")
 
     Profiles:
     -profile standard              Run pipeline locally with Docker

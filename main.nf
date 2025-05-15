@@ -247,7 +247,7 @@ process extract_barcodes {
 }
 
 process filter_barcodes {
-    publishDir "$params.outdir/$meta.id"
+    //publishDir "$params.outdir/$meta.id"
     tag("$meta.id")
 
     cpus params.cores

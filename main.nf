@@ -28,8 +28,8 @@ Barcode correction:
 
 Resources:
 --cores <int>                  Number of CPU cores to use (default: 4)
---big_mem <string>             Memory allocation for big memory processes (default: "64 GB")
---correct_mem <string>         Memory allocation for barcode correction processes (default: "64 GB")
+--big_mem <string>             Memory allocation for big memory processes (default: "128 GB")
+--correct_mem <string>         Memory allocation for barcode correction processes (default: "128 GB")
 
 Profiles:
 -profile standard              Run pipeline locally with Docker
@@ -156,6 +156,7 @@ process read_stats {
     tag("$meta.id")
 
     cpus params.cores 
+    memory params.big_mem
 
     input:
     tuple val(meta), path(r1), path(r2)
@@ -201,7 +202,7 @@ process rename_reads {
     tag("$meta.id")
 
     cpus params.cores 
-    cpus params.big_mem
+    memory params.big_mem
 
     input:
     tuple val(meta), path(reads)

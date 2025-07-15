@@ -156,7 +156,6 @@ process read_stats {
     tag("$meta.id")
 
     cpus params.cores 
-    memory params.big_mem
 
     input:
     tuple val(meta), path(r1), path(r2)

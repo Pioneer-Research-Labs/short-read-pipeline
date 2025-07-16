@@ -152,7 +152,7 @@ process get_flanks {
 
 process read_stats {
 
-    publishDir "$params.outdir/$meta.id"
+    publishDir "$params.outdir/$meta.id",  mode: 'copy'
     tag("$meta.id")
 
     cpus params.cores
@@ -176,7 +176,7 @@ process filter_and_merge {
     cpus params.cores
     memory params.big_mem
 
-    //publishDir "$params.outdir/$meta.id"
+    //publishDir "$params.outdir/$meta.id",  mode: 'copy'
     tag("$meta.id")
 
     input:
@@ -198,7 +198,7 @@ process filter_and_merge {
 }
 
 process rename_reads {
-    //publishDir "$params.outdir/$meta.id"
+    //publishDir "$params.outdir/$meta.id",  mode: 'copy'
     tag("$meta.id")
 
     cpus params.cores 
@@ -248,7 +248,7 @@ process extract_barcodes {
 }
 
 process filter_barcodes {
-    //publishDir "$params.outdir/$meta.id"
+    //publishDir "$params.outdir/$meta.id",  mode: 'copy'
     tag("$meta.id")
 
     cpus params.cores
@@ -268,7 +268,7 @@ process filter_barcodes {
 
 process barcode_stats {
     
-    publishDir "$params.outdir/$meta.id"
+    publishDir "$params.outdir/$meta.id",  mode: 'copy'
     tag("$meta.id")
     cpus params.cores
 
@@ -288,7 +288,7 @@ process barcode_stats {
 }
 
 process combine_stats {
-    publishDir "$params.outdir/$meta.id"
+    publishDir "$params.outdir/$meta.id",  mode: 'copy'
     tag("$meta.id")
 
     input:
@@ -306,7 +306,7 @@ process combine_stats {
 
 process agg_stats {
     
-    publishDir "$params.outdir"
+    publishDir "$params.outdir",  mode: 'copy'
 
     input:
     path stats_files
@@ -323,7 +323,7 @@ process agg_stats {
 
 process barcode_counts {
 
-    publishDir("$params.outdir/$meta.id")
+    publishDir("$params.outdir/$meta.id"),  mode: 'copy'
     tag("$meta.id")
 
     cpus params.cores
@@ -345,7 +345,7 @@ process barcode_counts {
 
 process barcode_correct {
     
-    //publishDir("$params.outdir/$meta.id")
+    //publishDir("$params.outdir/$meta.id"),  mode: 'copy'
     tag("$meta.id")
 
     memory params.correct_mem
@@ -367,7 +367,7 @@ process barcode_correct {
 }
 
 process add_freq {
-    publishDir("$params.outdir/$meta.id")
+    publishDir("$params.outdir/$meta.id"),  mode: 'copy'
     tag("$meta.id")
 
     input:
@@ -385,7 +385,7 @@ process add_freq {
 }
 
 process agg_barcode_counts {
-    publishDir("$params.outdir")
+    publishDir("$params.outdir"),  mode: 'copy'
 
     input:
     tuple val(cutoff), path(freq_files), path(uniq_files)
@@ -404,7 +404,7 @@ process agg_barcode_counts {
 
 process prepare_report {
 
-    publishDir("$params.outdir")
+    publishDir("$params.outdir"),  mode: 'copy'
     tag 'Preparing report'
 
     input:

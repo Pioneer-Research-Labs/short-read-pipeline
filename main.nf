@@ -91,6 +91,7 @@ Short Read Processing Pipeline
 
     // get barcode counts
     counts = barcode_counts(filtered_bc)
+    counts.view()
 
     // combine stats
     stats_ch = bc_stats.barcodes \
@@ -98,7 +99,7 @@ Short Read Processing Pipeline
         .join(r_stats)
 
    
-    cutoffs = Channel.fromList(params.barcode_cutoff)
+    cutoffs = Channel.fromList([0,5])
 
     if ( params.correct) {
         bc_correct = barcode_correct(counts)
@@ -108,6 +109,7 @@ Short Read Processing Pipeline
             | add_freq
     } else {
         stats_ch = stats_ch.map { it + [ [] ] }
+        stats_ch.view()
         freqs = counts \
             | combine(cutoffs) \
             | add_freq

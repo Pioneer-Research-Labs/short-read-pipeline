@@ -136,6 +136,9 @@ Short Read Processing Pipeline
 process get_flanks {
     
     tag("$meta.id")
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
 
     input:
     tuple val(meta), path(construct)
@@ -156,7 +159,9 @@ process read_stats {
 
     publishDir "$params.outdir/$meta.id",  mode: 'copy'
     tag("$meta.id")
-
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
     cpus params.cores
     memory params.big_mem
 
@@ -177,7 +182,9 @@ process filter_and_merge {
 
     cpus params.cores
     memory params.big_mem
-
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
     //publishDir "$params.outdir/$meta.id",  mode: 'copy'
     tag("$meta.id")
 
@@ -205,6 +212,9 @@ process rename_reads {
 
     cpus params.cores 
     memory params.big_mem
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
 
     input:
     tuple val(meta), path(reads)
@@ -226,6 +236,9 @@ process extract_barcodes {
 
     cpus params.cores
     memory params.big_mem
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
 
     input:
     tuple val(meta), path(reads), path(flanking)    
@@ -252,7 +265,9 @@ process extract_barcodes {
 process filter_barcodes {
     //publishDir "$params.outdir/$meta.id",  mode: 'copy'
     tag("$meta.id")
-
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
     cpus params.cores
 
     input:
@@ -273,7 +288,9 @@ process barcode_stats {
     publishDir "$params.outdir/$meta.id",  mode: 'copy'
     tag("$meta.id")
     cpus params.cores
-
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
     input: 
     tuple val(meta), path(barcodes), path(barcodes_filtered)
 
@@ -292,7 +309,9 @@ process barcode_stats {
 process combine_stats {
     publishDir "$params.outdir/$meta.id",  mode: 'copy'
     tag("$meta.id")
-
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
     input:
     tuple val(meta), path(barcodes), path(barcodes_filtered), path(read_stats), path(correct_stats)
 
@@ -309,7 +328,9 @@ process combine_stats {
 process agg_stats {
     
     publishDir "$params.outdir",  mode: 'copy'
-
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
     input:
     path stats_files
 
@@ -327,7 +348,9 @@ process barcode_counts {
 
     publishDir("$params.outdir/$meta.id"),  mode: 'copy'
     tag("$meta.id")
-
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
     cpus params.cores
     memory params.big_mem
 
@@ -351,7 +374,9 @@ process barcode_correct {
     tag("$meta.id")
 
     memory params.correct_mem
-
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
     input:
     tuple val(meta), path(barcode_counts)
 
@@ -371,7 +396,9 @@ process barcode_correct {
 process add_freq {
     publishDir("$params.outdir/$meta.id"),  mode: 'copy'
     tag("$meta.id")
-
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
     input:
     tuple val(meta), path(barcode_counts), val(cutoff)
 
@@ -388,7 +415,9 @@ process add_freq {
 
 process agg_barcode_counts {
     publishDir("$params.outdir"),  mode: 'copy'
-
+    errorStrategy = 'retry'
+    maxRetries    = 3
+    memory = { 1.GB * task.attempt }
     input:
     tuple val(cutoff), path(freq_files), path(uniq_files)
 

@@ -16,7 +16,7 @@
                     "format": "directory-path",
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open",
-                    "default": "s3://pioneer-analysis/short_read/prod/2025_08_06_13_40_29_samples",
+                    "default": "",
                     "hidden": true
                 }
             }
@@ -30,7 +30,7 @@
     "properties": {
         "samplesheet": {
             "type": "string",
-            "default": "samples.csv",
+            "default": "",
             "format": "file-path",
             "mimetype": "text/csv"
         },
@@ -90,7 +90,7 @@
         },
         "cores": {
             "type": "integer",
-            "default": 4
+            "default": 16
         },
         "big_mem": {
             "type": "string",
@@ -99,10 +99,6 @@
         "correct_mem": {
             "type": "string",
             "default": "128 GB"
-        },
-        "batch_process_memory": {
-            "type": "string",
-            "default": "16 GB"
         }
     },
     "required": [

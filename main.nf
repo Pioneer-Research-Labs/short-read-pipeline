@@ -98,7 +98,7 @@ Short Read Processing Pipeline
         .join(r_stats)
 
 
-    cutoffs = Channel.fromList(params.barcode_cutoff)
+    cutoffs = Channel.fromList([[0,5]])
 
     if ( params.correct) {
         bc_correct = barcode_correct(counts)

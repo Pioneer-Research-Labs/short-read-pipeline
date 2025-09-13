@@ -1,107 +1,105 @@
 {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com///nextflow_schema.json",
-    "title": " pipeline parameters",
-    "description": "",
-    "type": "object",
-    "$defs": {
-        "input_output_options": {
-            "title": "Input/output options",
-            "type": "object",
-            "fa_icon": "fas fa-terminal",
-            "description": "Define where the pipeline should find input data and save output data.",
-            "properties": {
-                "outdir": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
-                    "fa_icon": "fas fa-folder-open",
-                    "default": "",
-                    "hidden": true
-                }
-            }
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com///nextflow_schema.json",
+  "title": " pipeline parameters",
+  "description": "",
+  "type": "object",
+  "$defs": {
+    "input_output_options": {
+      "title": "Input/output options",
+      "type": "object",
+      "fa_icon": "fas fa-terminal",
+      "description": "Define where the pipeline should find input data and save output data.",
+      "properties": {
+        "outdir": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
+          "fa_icon": "fas fa-folder-open",
+          "default": "",
+          "hidden": true
         }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/input_output_options"
+    }
+  ],
+  "properties": {
+    "samplesheet": {
+      "type": "string",
+      "default": "",
+      "format": "file-path",
+      "mimetype": "text/csv"
     },
-    "allOf": [
-        {
-            "$ref": "#/$defs/input_output_options"
-        }
-    ],
-    "properties": {
-        "samplesheet": {
-            "type": "string",
-            "default": "",
-            "format": "file-path",
-            "mimetype": "text/csv"
-        },
-        "correct": {
-            "type": "boolean",
-            "hidden": true
-        },
-        "s3_path": {
-            "type": "string",
-            "default": "s3://pioneer-analysis/short_read/",
-            "hidden": true
-        },
-        "parentdir": {
-            "type": "string",
-            "default": "prod",
-            "hidden": true
-        },
-        "error_rate": {
-            "type": "number",
-            "default": 0.1,
-            "hidden": true
-        },
-        "min_overlap": {
-            "type": "integer",
-            "default": 3,
-            "hidden": true
-        },
-        "min_centroid": {
-            "type": "integer",
-            "default": 2,
-            "hidden": true
-        },
-        "correct_error_rate": {
-            "type": "number",
-            "default": 0.1,
-            "hidden": true
-        },
-        "max_edits": {
-            "type": "integer",
-            "default": 3,
-            "hidden": true
-        },
-        "min_bc_len": {
-            "type": "integer",
-            "default": 20,
-            "hidden": true
-        },
-        "max_bc_len": {
-            "type": "integer",
-            "default": 60,
-            "hidden": true
-        },
-        "barcode_cutoff": {
-            "type": "string",
-            "default": "[0, 5]",
-            "hidden": true
-        },
-        "cores": {
-            "type": "integer",
-            "default": 16
-        },
-        "big_mem": {
-            "type": "string",
-            "default": "128 GB"
-        },
-        "correct_mem": {
-            "type": "string",
-            "default": "128 GB"
-        }
+    "correct": {
+      "type": "boolean",
+      "hidden": true
     },
-    "required": [
-        "samplesheet"
-    ]
+    "s3_path": {
+      "type": "string",
+      "default": "s3://pioneer-analysis/short_read/",
+      "hidden": true
+    },
+    "parentdir": {
+      "type": "string",
+      "default": "prod",
+      "hidden": true
+    },
+    "error_rate": {
+      "type": "number",
+      "default": 0.1,
+      "hidden": true
+    },
+    "min_overlap": {
+      "type": "integer",
+      "default": 3,
+      "hidden": true
+    },
+    "min_centroid": {
+      "type": "integer",
+      "default": 2,
+      "hidden": true
+    },
+    "correct_error_rate": {
+      "type": "number",
+      "default": 0.1,
+      "hidden": true
+    },
+    "max_edits": {
+      "type": "integer",
+      "default": 3,
+      "hidden": true
+    },
+    "min_bc_len": {
+      "type": "integer",
+      "default": 20,
+      "hidden": true
+    },
+    "max_bc_len": {
+      "type": "integer",
+      "default": 60,
+      "hidden": true
+    },
+    "barcode_cutoff": {
+      "type": "string",
+      "default": "[0, 5]",
+      "hidden": true
+    },
+    "cores": {
+      "type": "integer",
+      "default": 32
+    },
+    "big_mem": {
+      "type": "string",
+      "default": "256 GB"
+    },
+    "correct_mem": {
+      "type": "string",
+      "default": "256 GB"
+    }
+  },
+  "required": ["samplesheet"]
 }

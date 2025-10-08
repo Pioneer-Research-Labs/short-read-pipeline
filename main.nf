@@ -100,7 +100,7 @@ Short Read Processing Pipeline
 
     cutoffs = Channel.fromList([[0,5]])
 
-    if ( params.correct) {
+    if ( params.correct && counts.length() > 0 ) {
         bc_correct = barcode_correct(counts)
         stats_ch = stats_ch.join(bc_correct.corrected_stats)
         freqs = bc_correct.corrected \

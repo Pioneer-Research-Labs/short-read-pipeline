@@ -100,12 +100,14 @@ Short Read Processing Pipeline
 
     cutoffs = Channel.fromList([[0,5]])
 
-    if ( params.correct && counts.length() > 0 ) {
-        bc_correct = barcode_correct(counts)
-        stats_ch = stats_ch.join(bc_correct.corrected_stats)
-        freqs = bc_correct.corrected \
+    if ( params.correct ){
+         // correct barcodes
+         bc_correct = counts.filter { file(it[1]).readLines().size() != 0 } \
+            | barcode_correct
+         freqs = bc_correct.corrected \
             | combine(cutoffs) \
             | add_freq
+
     } else {
         stats_ch = stats_ch.map { it + [ [] ] }
         freqs = counts \

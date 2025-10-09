@@ -59,7 +59,7 @@ Short Read Processing Pipeline
 
     samples = channel.fromPath(params.samplesheet)
             .splitCsv(header:true)
-            .map { row -> 
+            .map { row ->
                 meta = [id:row.id]
                 [meta, file(row.r1), file(row.r2)]
             }
@@ -67,7 +67,7 @@ Short Read Processing Pipeline
 
     constructs = channel.fromPath(params.samplesheet)
             .splitCsv(header:true)
-            .map { row -> 
+            .map { row ->
                 meta = [id:row.id,]
                 [meta, file(row.construct)]
             }
@@ -78,7 +78,7 @@ Short Read Processing Pipeline
     flanks = get_flanks(constructs)
 
     // Quality filtering and merging pairs
-    filtered = filter_and_merge(samples) 
+    filtered = filter_and_merge(samples)
 
     // extract barcodes
     barcodes = extract_barcodes(filtered.merged.join(flanks.cutadapt_bc))
@@ -98,7 +98,7 @@ Short Read Processing Pipeline
         .join(r_stats)
 
 
-    cutoffs = Channel.fromList(params.barcode_cutoff)
+    cutoffs = Channel.fromList([[0,5]]).flatMap{ it }
 
     if ( params.correct ){
          // correct barcodes

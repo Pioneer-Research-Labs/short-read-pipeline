@@ -57,25 +57,40 @@ Short Read Processing Pipeline
         exit 0
     }
 
-    samples = channel.fromPath(params.samplesheet)
-            .splitCsv(header:true)
-            .map { row ->
-                meta = [id:row.id]
-                [meta, file(row.r1), file(row.r2)]
-            }
-
-
-    constructs = channel.fromPath(params.samplesheet)
-            .splitCsv(header:true)
-            .map { row ->
-                meta = [id:row.id,]
-                [meta, file(row.construct)]
-            }
-
-    r_stats = read_stats(samples)
 
     // get the flanking sequences from the .dna file
+    constructs = channel.fromPath(params.samplesheet)
+    .splitCsv(header:true)
+    .map { row ->
+        def meta = [id:row.id,]
+        [meta, file(row.construct)]
+    }
+
     flanks = get_flanks(constructs)
+
+    // Paired end flow
+
+    if ( params.paired_reads ) {
+
+        // Sample channel factory
+        samples = channel.fromPath(params.samplesheet)
+        .splitCsv(header:true)
+        .map { row ->
+            [[id:row.id, paired_reads:true], [file(row.r1), file(row.r2)]]
+        }
+        
+    } else {
+        // Sample channel factory
+        samples = channel.fromPath(params.samplesheet)
+        .splitCsv(header:true)
+        .map { row ->
+            [[id:row.id, paired_reads:false], [file(row.r1)]]
+        }
+
+    }
+
+
+    r_stats = read_stats(samples)
 
     // Quality filtering and merging pairs
     filtered = filter_and_merge(samples)
@@ -97,18 +112,18 @@ Short Read Processing Pipeline
         .join(bc_stats.barcodes_filtered) \
         .join(r_stats)
 
-    cutoffs = Channel.fromList([1])
+    cutoffs = channel.fromList([1])
 
     if ( params.correct ){
          // correct barcodes
-         bc_correct = counts.filter { file(it[1]).readLines().size() != 0 } \
+         bc_correct = counts.filter { it -> file(it[1]).readLines().size() != 0 } \
             | barcode_correct
          freqs = bc_correct.corrected \
             | combine(cutoffs) \
             | add_freq
 
     } else {
-        stats_ch = stats_ch.map { it + [ [] ] }
+        stats_ch = stats_ch.map { it -> it + [ [] ] }
         freqs = counts \
             | combine(cutoffs) \
             | add_freq
@@ -160,15 +175,23 @@ process read_stats {
     memory params.big_mem
 
     input:
-    tuple val(meta), path(r1), path(r2)
+    tuple val(meta), path(reads)
 
     output:
     tuple val(meta), path("read_stats.tsv")
 
     script:
-    """
-    seqkit stats -T -j $task.cpus $r1 $r2 > read_stats.tsv
-    """
+
+    if (meta.paired_reads) {
+        """
+        seqkit stats -T -j $task.cpus ${reads[0]} ${reads[1]} > read_stats.tsv
+        """
+    } else {
+        """
+        seqkit stats -T -j $task.cpus ${reads} > read_stats.tsv
+        """
+    }
+
 
 }
 
@@ -181,7 +204,7 @@ process filter_and_merge {
     tag("$meta.id")
 
     input:
-    tuple val(meta), path(r1), path(r2) 
+    tuple val(meta), path(reads)
     
     output:
     tuple val(meta), path("merged_reads.fastq"), emit: merged
@@ -191,7 +214,7 @@ process filter_and_merge {
 
     script:
     """
-    fastp -i $r1 -I $r2 --correction -m --merged_out merged_reads.fastq \
+    fastp -i ${reads[0]} -I ${reads[1]} --correction -m --merged_out merged_reads.fastq \
             -w $task.cpus \
             --json fastp_report.json \
             --html fastp_report.html

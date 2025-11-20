@@ -11,8 +11,8 @@ Options:
 General:
 --outdir <path>                Output directory (default: "results")
 --samplesheet <path>           Path to the samplesheet CSV file (default: "samples.csv")
---barcode_cutoff <list>        List of barcode count cutoffs. Produces one barcode output 
-                                file per cutoff (default: [0, 5])
+--barcode_cutoff <integer>     Barcode threshold where count >= cutoff for frequency calculations (default: 2)
+--paired_reads <boolean>       Whether the input reads are paired. (default: true). If false only column r1 will be used from sample sheet
 
 Barcode searching:
 --error_rate <float>           Error rate for barcode searching (default: 0.1)
@@ -21,13 +21,13 @@ Barcode searching:
 --max_bc_len <int>             Maximum barcode length for filtering (default: 60)
 
 Barcode correction:
---correct                      Enable barcode correction (default: false)
+--correct                      Enable barcode correction (default: true)
 --min_centroid <int>           Minimum centroid for barcode correction (default: 2)
 --correct_error_rate <float>   Error rate for barcode correction (default: 0.1)
 --max_edits <int>              Maximum edits for barcode correction (default: 3)
 
 Resources:
---cores <int>                  Number of CPU cores to use (default: 4)
+--cores <int>                  Number of CPU cores to use (default: 32)
 --big_mem <string>             Memory allocation for big memory processes (default: "128 GB")
 --correct_mem <string>         Memory allocation for barcode correction processes (default: "128 GB")
 
@@ -57,20 +57,16 @@ Short Read Processing Pipeline
         exit 0
     }
 
-
-    // get the flanking sequences from the .dna file
-    constructs = channel.fromPath(params.samplesheet)
-    .splitCsv(header:true)
-    .map { row ->
-        def meta = [id:row.id,]
-        [meta, file(row.construct)]
-    }
-
-    flanks = get_flanks(constructs)
-
     // Paired end flow
 
     if ( params.paired_reads ) {
+
+        // Construct channel factory
+        constructs = channel.fromPath(params.samplesheet)
+        .splitCsv(header:true)
+        .map { row ->
+            [[id:row.id, paired_reads:true], file(row.construct)]
+            }
 
         // Sample channel factory
         samples = channel.fromPath(params.samplesheet)
@@ -80,6 +76,15 @@ Short Read Processing Pipeline
         }
         
     } else {
+
+        // Construct channel factory
+        constructs = channel.fromPath(params.samplesheet)
+        .splitCsv(header:true)
+        .map { row ->
+            //def meta = [id:row.id]
+            [[id:row.id, paired_reads:false], file(row.construct)]
+            }
+
         // Sample channel factory
         samples = channel.fromPath(params.samplesheet)
         .splitCsv(header:true)
@@ -89,14 +94,22 @@ Short Read Processing Pipeline
 
     }
 
-
     r_stats = read_stats(samples)
 
-    // Quality filtering and merging pairs
-    filtered = filter_and_merge(samples)
+    flanks = get_flanks(constructs)
 
-    // extract barcodes
-    barcodes = extract_barcodes(filtered.merged.join(flanks.cutadapt_bc))
+
+    if ( params.paired_reads ) {
+        // Quality filtering and merging pairs
+        filtered = filter_and_merge(samples)
+        barcodes = extract_barcodes(filtered.merged.join(flanks.cutadapt_bc))
+
+    } else {
+        // Filter or at least decompress but don't attempt merging
+        // Output of this then goes into extract_barcodes
+        barcodes = extract_barcodes(samples.join(flanks.cutadapt_bc))
+        
+    }
 
     // size filter for barcodes
     filtered_bc = filter_barcodes(barcodes.barcodes)
@@ -112,7 +125,7 @@ Short Read Processing Pipeline
         .join(bc_stats.barcodes_filtered) \
         .join(r_stats)
 
-    cutoffs = channel.fromList([1])
+    cutoffs = channel.of(params.barcode_cutoff)
 
     if ( params.correct ){
          // correct barcodes
@@ -220,27 +233,6 @@ process filter_and_merge {
             --html fastp_report.html
     """
 }
-
-process rename_reads {
-    //publishDir "$params.outdir/$meta.id",  mode: 'copy'
-    tag("$meta.id")
-
-    cpus params.cores 
-    memory params.big_mem
-
-    input:
-    tuple val(meta), path(reads)
-
-    output:
-    tuple val(meta), path("cleaned_reads.fastq")
-
-    script:
-    """
-    seqkit replace -j $task.cpus -p .+ -r "read_{nr}" $reads > cleaned_reads.fastq
-    """
-
-}
-
 
 process extract_barcodes {
 

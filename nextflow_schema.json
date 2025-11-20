@@ -48,6 +48,10 @@
       "default": "prod",
       "hidden": true
     },
+    "paired_reads": {
+      "type": "boolean",
+      "default": true
+    },
     "error_rate": {
       "type": "number",
       "default": 0.1,
@@ -84,8 +88,8 @@
       "hidden": true
     },
     "barcode_cutoff": {
-      "type": "string",
-      "default": "[0, 5]",
+      "type": "integer",
+      "default": 2,
       "hidden": true
     },
     "cores": {

@@ -72,7 +72,7 @@ Short Read Processing Pipeline
         samples = channel.fromPath(params.samplesheet)
         .splitCsv(header:true)
         .map { row ->
-            [[id:row.id, paired_reads:true], [file(row.r1), file(row.r2)]]
+            [[id:row.id, paired_reads:true], [file(row.r1, checkIfExists:true), file(row.r2, checkIfExists:true)]]
         }
         
     } else {
@@ -82,14 +82,14 @@ Short Read Processing Pipeline
         .splitCsv(header:true)
         .map { row ->
             //def meta = [id:row.id]
-            [[id:row.id, paired_reads:false], file(row.construct)]
+            [[id:row.id, paired_reads:false], file(row.construct, checkIfExists:true)]
             }
 
         // Sample channel factory
         samples = channel.fromPath(params.samplesheet)
         .splitCsv(header:true)
         .map { row ->
-            [[id:row.id, paired_reads:false], [file(row.r1)]]
+            [[id:row.id, paired_reads:false], [file(row.r1, checkIfExists:true)]]
         }
 
     }

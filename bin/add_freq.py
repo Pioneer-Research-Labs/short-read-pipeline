@@ -15,7 +15,7 @@ def main(path, sample, cutoff):
         
     x = add_freq(x, psi = 0)
 
-    x.query('n > @cutoff', inplace = True)
+    x.query('n >= @cutoff', inplace = True)
 
     uniq = x.value_counts('sample').reset_index().rename(columns={'count': 'num_uniq_bc'})
     

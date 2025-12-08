@@ -52,6 +52,11 @@
       "type": "boolean",
       "default": true
     },
+    "quality_cutoff": {
+      "type": "integer",
+      "default": 10,
+      "hidden": true
+    },
     "error_rate": {
       "type": "number",
       "default": 0.1,

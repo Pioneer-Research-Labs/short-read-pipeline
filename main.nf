@@ -255,6 +255,7 @@ process extract_barcodes {
         --discard-untrimmed \
         --revcomp \
         --cores $task.cpus \
+        -q $params.quality_cutoff \
         -e $params.error_rate \
         -O $params.min_overlap \
         -o barcodes.fastq \

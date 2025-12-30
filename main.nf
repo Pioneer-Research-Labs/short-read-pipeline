@@ -38,7 +38,23 @@ Profiles:
     """
 }
 
+def config_info = """
+General parameters:
+Output directory = $params.outdir
+Sample sheet     = $params.samplesheet
+Paired end reads = $params.paired_reads
 
+Barcode Filtering Parameters:
+Min barcode length   = $params.min_bc_len
+Max barcode length   = $params.max_bc_len
+Minimum count cutoff = $params.barcode_cutoff
+
+Error correction parameters:
+Error correction performed = $params.correct
+Minimum centroid           = $params.min_centroid
+Correction error rate      = $params.correct_error_rate
+Max edits                  = $params.max_edits
+"""
 
 workflow {
 
@@ -56,6 +72,8 @@ Short Read Processing Pipeline
         helpMessage()
         exit 0
     }
+
+    log_params()
 
     // Paired end flow
 
@@ -158,6 +176,19 @@ Short Read Processing Pipeline
     // report
     template = channel.fromPath("${projectDir}/assets/report_template.ipynb")
     prepare_report(template)
+}
+
+
+process log_params {
+    publishDir("$params.outdir"),  mode: 'copy'
+
+    output:
+    path "nextflow_config_params.txt"
+
+    script:
+    """
+    echo '$config_info' > nextflow_config_params.txt
+    """
 }
 
 process get_flanks {

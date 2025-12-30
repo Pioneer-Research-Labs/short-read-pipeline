@@ -38,7 +38,23 @@ Profiles:
     """
 }
 
+def config_info = """
+General parameters:
+Output directory = $params.outdir
+Sample sheet     = $params.samplesheet
+Paired end reads = $params.paired_reads
 
+Barcode Filtering Parameters:
+Min barcode length   = $params.min_bc_len
+Max barcode length   = $params.max_bc_len
+Minimum count butoff = $params.barcode_cutoff
+
+Error correction parameters:
+Error correction performed = $params.correct
+Minimum centroid           = $params.min_centroid
+Correction Error Rate      = $params.correct_error_rate
+Max edits                  = $params.max_edits
+"""
 
 workflow {
 
@@ -57,26 +73,7 @@ Short Read Processing Pipeline
         exit 0
     }
 
-    // Log Outputs
-    
-    config_info = """
-General parameters:
-Output directory = $params.outdir
-Sample sheet     = $params.samplesheet
-Paired end reads = $params.paired_reads
-
-Barcode Filtering Parameters:
-Min barcode length   = $params.min_bc_len
-Max barcode length   = $params.max_bc_len
-Minimum count butoff = $params.barcode_cutoff
-
-Error correction parameters:
-Error correction performed = $params.correct
-Minimum centroid           = $params.min_centroid
-Correction Error Rate      = $params.correct_error_rate
-Max edits                  = $params.max_edits
-"""
-
+    log_params()
 
     // Paired end flow
 
@@ -114,8 +111,6 @@ Max edits                  = $params.max_edits
         }
 
     }
-
-    log_params()
 
     r_stats = read_stats(samples)
 

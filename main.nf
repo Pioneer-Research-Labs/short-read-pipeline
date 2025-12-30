@@ -47,12 +47,12 @@ Paired end reads = $params.paired_reads
 Barcode Filtering Parameters:
 Min barcode length   = $params.min_bc_len
 Max barcode length   = $params.max_bc_len
-Minimum count butoff = $params.barcode_cutoff
+Minimum count cutoff = $params.barcode_cutoff
 
 Error correction parameters:
 Error correction performed = $params.correct
 Minimum centroid           = $params.min_centroid
-Correction Error Rate      = $params.correct_error_rate
+Correction error rate      = $params.correct_error_rate
 Max edits                  = $params.max_edits
 """
 

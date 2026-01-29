@@ -97,6 +97,33 @@ def reorient_circular_read(read, orientation_seq):
         else:
             # no reindexing, didn't find the kmers
             return read
+
+def add_freq(x, psi = 0):
+    """
+    Add frequency and log-ratio columns to a DataFrame.
+
+    Parameters
+    ----------
+    x : pandas.DataFrame
+        Input DataFrame containing at least 'sample' and 'count' columns.
+    psi : float, optional
+        A small value to add to the counts to avoid division by zero, by default 0.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with additional 'freq' and 'lr' columns where 'freq' is the frequency
+        of counts within each sample and 'lr' is the log2 of the frequency.
+    """
+
+    all_counts = x.groupby('sample')['count'].sum().reset_index() \
+    .rename(columns = {'count': 'N'})
+    out = x.merge(all_counts, on = 'sample', how = 'left') \
+        .rename(columns = {'count': 'n'}) \
+        .assign(psi = psi) \
+        .assign(freq = lambda x: (x.n.values + x.psi.values) / x.N.values) \
+        .assign(lr = lambda x: np.log2(x.freq.values))
+    return out
     
     
 class customJSONEncoder(json.JSONEncoder):
@@ -117,4 +144,6 @@ class customJSONEncoder(json.JSONEncoder):
             return super().encode({int(k) if isinstance(k, np.int64) else k: v for k, v in obj.items()})
         return super().encode(obj)
     """   
+
+    
               

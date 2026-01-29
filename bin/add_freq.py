@@ -2,7 +2,7 @@
 
 import pandas as pd
 import click
-from pioneertools.fitness_utils import add_freq
+from util import add_freq
 
 @click.command()
 @click.argument('path')

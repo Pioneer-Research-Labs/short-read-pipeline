@@ -14,7 +14,5 @@ RUN conda install -c bioconda -c conda-forge -y \
     csvtk=0.32.0
     
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-RUN --mount=type=ssh pip install git+ssh://git@github.com/Pioneer-Research-Labs/pioneertools.git
-
 
 
